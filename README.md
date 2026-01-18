@@ -241,4 +241,4 @@ If you want to evolve this into a more production-ready utility, good next steps
 
 ## License
 
-No license file is included in this repository currently. If you plan to share or reuse this project publicly, consider adding a license (e.g., MIT) to make permissions explicit.
+MIT License. See `LICENSE`.
