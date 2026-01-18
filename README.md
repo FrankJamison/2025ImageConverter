@@ -1,36 +1,84 @@
-## 2025 Python Image Converter (Batch → PNG)
+﻿# 2025 Python Image Converter (Batch → PNG/JPG/WebP)
 
-A small command-line Python utility that batch-converts all images in a folder into **PNG** files.
+A small, focused **command-line image conversion utility** written in Python. It takes an input folder, converts each image it finds, and writes outputs in a chosen format (PNG/JPG/WebP) into a destination folder.
 
-This project was built as a hands-on exercise to practice:
-- Writing a simple CLI script that accepts arguments
-- Working with the filesystem (listing files, creating folders)
-- Using a third-party imaging library (Pillow)
+This repo is intentionally lightweight, built to demonstrate practical fundamentals that recruiters and developers care about: CLI design, filesystem automation, working with third‑party libraries, and producing a clean, usable deliverable.
+
+---
+
+## Quick Pitch (for Recruiters)
+
+**What it does:** batch converts images from one folder into a chosen output format (`.png`, `.jpg`, `.webp`) in another folder.
+
+**What it demonstrates:**
+
+- Building a small CLI tool (argument-driven workflow)
+- Filesystem operations (directory creation, listing, safe naming)
+- Using a production-grade imaging library ([Pillow](https://python-pillow.org/))
+- Delivering documentation and a repeatable setup (`requirements.txt`)
+
+**Why it matters:** many real-world tasks are “small automation” problems. This project is an example of shipping a tidy tool that solves a real pain point quickly.
 
 ---
 
 ## Features
 
-- Converts every file in an input folder to `.png`
-- Creates the output folder automatically if it doesn’t exist
-- Keeps the original filename (only changes the extension)
+- Batch converts every file in an input folder into a chosen output format (`.png`, `.jpg`, `.webp`)
+- Auto-creates the output folder if it doesn’t exist
+- Preserves the original base filename (only changes the extension)
+- Skips existing outputs by default (use `--overwrite` to replace)
+- Handles non-image files gracefully (counts failures instead of crashing)
+- Optional recursive mode to process subfolders (`--recursive`)
 
 ---
 
 ## Tech Stack
 
-- Python
-- [Pillow](https://python-pillow.org/) (PIL) for image loading and saving
+- **Python 3.x**
+- **Pillow 12.x** for image decoding/encoding
+
+Dependency is pinned in `requirements.txt` for reproducibility.
 
 ---
 
-## How It Works
+## Repository Layout
 
-`main.py`:
-1. Reads two command-line arguments: an `input_folder` and an `output_folder`
-2. Ensures the output folder exists
-3. Loops through every filename in the input folder
-4. Opens each file with Pillow and saves it as PNG in the output folder
+```text
+.
+├─ main.py            # CLI entry point (batch conversion)
+├─ requirements.txt   # Runtime dependency pins
+├─ README.md          # Project documentation
+├─ pokedex/           # Sample input images (.jpg)
+└─ new/               # Sample output images (generated)
+```
+
+---
+
+## How It Works (Design + Implementation)
+
+At a high level, the program follows a simple pipeline:
+
+1. Read CLI arguments: `input_folder` and `output_folder`
+2. Ensure the output folder exists (create it if missing)
+3. Iterate over filenames in the input folder
+4. For each file:
+	- Open it via Pillow (`Image.open`)
+	- Strip the original extension to get a base name
+	- Save to the output folder in the chosen output format
+
+### Key Design Decisions
+
+- **Folder-to-folder workflow:** favors batch automation over single-file operation.
+- **Keep names stable:** output naming uses the original base filename, so conversions are easy to track and diff.
+- **Minimal dependencies:** Pillow is the only external library.
+
+### Current Behavior (Important for Developers)
+
+- The script iterates over files in the input folder (non-recursive by default).
+- With `--recursive`, subfolders are processed and output subfolders are created to match.
+- Files that cannot be decoded as images are counted as failures and skipped.
+- If two different inputs share the same base name (e.g., `a.jpg` and `a.webp`), outputs will collide because both map to the same output name.
+- Existing outputs are skipped unless `--overwrite` is provided.
 
 ---
 
@@ -38,15 +86,11 @@ This project was built as a hands-on exercise to practice:
 
 ### Prerequisites
 
-- Python installed (3.x)
+- Python 3.x installed
 
-### Install Dependency (Pillow)
+### Install
 
-You can run this either in a virtual environment (recommended) or directly from your global Python install.
-
-#### Option A — Virtual Environment (recommended)
-
-PowerShell:
+Recommended (virtual environment):
 
 ```powershell
 python -m venv .venv
@@ -55,51 +99,103 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-#### Option B — System Python (quick run)
+Quick run (system Python):
 
 ```powershell
 py -m pip install Pillow
 ```
 
-If `py` isn’t available on your system, replace `py` with `python`.
+If `py` isn’t available, replace it with `python`.
 
 ---
 
 ## Usage
 
-From the project root, run:
+Run from the project root:
 
 ```powershell
 python main.py <input_folder> <output_folder>
 ```
 
-### Example (using the included sample folders)
+Optional flags:
+
+```text
+--format      Output format: png, jpg/jpeg, webp (default: png)
+--recursive   Process subfolders recursively (preserves relative paths)
+--overwrite   Overwrite outputs if they already exist
+--quiet       Suppress per-file output (still prints final summary)
+--verbose     Enable debug logging
+```
+
+### More Examples
+
+Convert to WebP (overwrite existing outputs):
+
+```powershell
+python main.py pokedex new --format webp --overwrite
+```
+
+Convert recursively while preserving subfolder structure:
+
+```powershell
+python main.py <input_folder> <output_folder> --recursive
+```
+
+### Example (using included sample folders)
 
 ```powershell
 python main.py pokedex new
 ```
 
-After running, converted PNGs will be written into the `new/` folder.
+After running, converted files will be written into the `new/` folder.
 
 ---
 
-## Project Structure
+## Developer Notes
 
-```text
-.
-├─ main.py        # CLI entry point
-├─ README.md      # Documentation
-├─ requirements.txt
-├─ pokedex/       # Example input images
-└─ new/           # Example output folder (created if missing)
+### CLI Contract
+
+The program exposes a small argparse-driven CLI:
+
+- `input_folder` — directory containing source images
+- `output_folder` — directory where converted files will be written
+
+It also supports:
+
+- `--format`
+- `--recursive`
+- `--overwrite`
+- `--quiet`
+- `--verbose`
+
+If `input_folder` is missing or invalid, the program exits with a non-zero status and prints an error.
+
+### Exit Codes
+
+- `0` — completed with no conversion failures
+- `1` — completed but one or more files failed to convert
+- `2` — invalid input (e.g., input folder does not exist)
+
+---
+
+## Testing
+
+Install dev dependencies:
+
+```powershell
+python -m pip install -r requirements-dev.txt
 ```
 
----
+Run tests:
 
-## Notes / Limitations
+```powershell
+pytest
+```
 
-- The script currently attempts to open every file in the input folder; if the folder contains non-image files, Pillow may raise an error.
-- Output filenames are based on the input filename (without extension). If two files share the same base name, later conversions will overwrite earlier ones.
+### Complexity
+
+- Runtime is approximately $O(n)$ over files in the folder (each file is decoded and re-encoded once).
+- Memory usage depends on image dimensions because each image is loaded into memory during conversion.
 
 ---
 
@@ -110,7 +206,7 @@ After running, converted PNGs will be written into the `new/` folder.
 Install Pillow:
 
 ```powershell
-python -m pip install Pillow
+python -m pip install -r requirements.txt
 ```
 
 ### Permission error while installing packages
@@ -118,13 +214,31 @@ python -m pip install Pillow
 Try installing for your user:
 
 ```powershell
-python -m pip install --user Pillow
+python -m pip install --user -r requirements.txt
+```
+
+### `Error: Unsupported format: '...'`
+
+Use one of the supported output formats:
+
+```text
+png, jpg/jpeg, webp
 ```
 
 ---
 
-## What I’d Improve Next
+## Roadmap / Improvements
 
-- Skip non-image files gracefully (try/except around `Image.open`)
-- Add basic logging / progress output
-- Add unit tests for path handling and filename normalization
+If you want to evolve this into a more production-ready utility, good next steps are:
+
+- Add `--dry-run` to preview planned outputs without writing files
+- Add collision handling options (e.g., auto-rename, keep existing, fail fast)
+- Add `--include/--exclude` patterns (process only certain extensions)
+- Add `--workers` for parallel conversion (CPU-bound tradeoffs)
+- Add richer reporting (write a JSON/CSV summary of results)
+
+---
+
+## License
+
+No license file is included in this repository currently. If you plan to share or reuse this project publicly, consider adding a license (e.g., MIT) to make permissions explicit.

@@ -17,3 +17,10 @@ dist/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Generated conversion outputs
+new/
+output/
+outputs/
+
+# If you use a different output folder name, add it here.
